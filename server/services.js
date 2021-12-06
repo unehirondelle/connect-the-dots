@@ -5,6 +5,7 @@ let state = {
     endNode: {x: null, y: null},
     firstLine: {start: {x: null, y: null}, end: {x: null, y: null}},
     secondLine: {start: {x: null, y: null}, end: {x: null, y: null}},
+    lines: []
 };
 
 module.exports = {
@@ -16,6 +17,7 @@ module.exports = {
             endNode: {x: null, y: null},
             firstLine: {start: {x: null, y: null}, end: {x: null, y: null}},
             secondLine: {start: {x: null, y: null}, end: {x: null, y: null}},
+            lines: []
         };
     },
     nodeClick: ({id, body}) => {
@@ -23,7 +25,13 @@ module.exports = {
 
         const checkSamePosition = (a, b) => {
             return (a.x === b.x && a.y === b.y);
-        }
+        };
+
+        const checkLineThroughNodes = (a, b) => {
+            return Math.abs(a.x - b.x) === Math.abs(a.y - b.y) ||
+                (a.x === b.x && a.y !== b.y) ||
+                (a.x !== b.x && a.y === b.y);
+        };
 
         if (state.click === 1) {
             //VALID_START_NODE or IN-VALID_START_NODE
@@ -58,7 +66,17 @@ module.exports = {
             // VALID_END_NODE , INVALID_END_NODE
             let isEndNodeValid = true;
 
-            if (state.endNode.x === null) {
+            if (state.endNode.x === null && checkLineThroughNodes(state.startNode, body)) {
+                state.endNode = body;
+                state.firstLine.end = body;
+                state.click = 1;
+                state.player = state.player === 1 ? 2 : 1;
+            } else if (state.endNode.x !== null && checkLineThroughNodes(state.firstLine.start, body)) {
+                state.endNode = body;
+                state.firstLine.end = body;
+                state.click = 1;
+                state.player = state.player === 1 ? 2 : 1;
+            } else if (state.endNode.x !== null && checkLineThroughNodes(state.firstLine.end, body)) {
                 state.endNode = body;
                 state.firstLine.end = body;
                 state.click = 1;
@@ -75,6 +93,7 @@ module.exports = {
             }
 
             if (isEndNodeValid) {
+                state.lines.push({start: state.startNode, end: state.endNode});
                 payload = {
                     msg: 'VALID_END_NODE', body: {
                         newLine: {
