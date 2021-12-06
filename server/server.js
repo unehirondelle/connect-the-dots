@@ -1,6 +1,7 @@
 const express = require('express');
 const {createServer} = require('http');
 const WebsocketServer = require('ws').Server;
+const {initialize, nodeClick} = require('./services');
 
 const app = express();
 const server = createServer(app);
@@ -13,6 +14,7 @@ wsServer.on('connection', (ws) => {
         let payload;
         switch (message.msg) {
             case 'INITIALIZE':
+                initialize();
                 payload = {...message};
                 payload.body = {
                     newLine: null,
@@ -21,13 +23,7 @@ wsServer.on('connection', (ws) => {
                 }
                 break;
             case 'NODE_CLICKED':
-                payload = {...message};
-                payload.msg = 'VALID_START_NODE';
-                payload.body = {
-                    newLine: null,
-                    heading: 'Player 1',
-                    message: 'Select a second node to complete the line.'
-                };
+                payload = nodeClick({...message});
                 break;
             case 'UPDATE_TEXT' :
                 payload = {
