@@ -4,7 +4,7 @@ let state = {
     thisMoveStartDot: {x: null, y: null},
     thisMoveEndDot: {x: null, y: null},
     line: {start: {x: null, y: null}, end: {x: null, y: null}},
-    lines: []
+    sections: []
 };
 
 module.exports = {
@@ -15,7 +15,7 @@ module.exports = {
             thisMoveStartDot: {x: null, y: null},
             thisMoveEndDot: {x: null, y: null},
             line: {start: {x: null, y: null}, end: {x: null, y: null}},
-            lines: []
+            sections: []
         };
     },
     nodeClick: ({id, body: dotFromUi}) => {
@@ -41,10 +41,10 @@ module.exports = {
             return a.x === b.x && a.y === b.y;
         };
 
-        const lineWillIntersect = (lines, startNode, endNode) => {
+        const lineWillIntersect = (sections, startNode, endNode) => {
             // Run through all the sections to determine if there is any intersection with line-to-be
-            // line intercept math by Paul Bourke is used
-            return lines.map(line => {
+            // line intercept math by Paul Bourke is used (http://paulbourke.net/geometry/pointlineplane/)
+            return sections.map(line => {
                 const x1 = line.start.x;
                 const y1 = line.start.y;
                 const x2 = line.end.x;
@@ -57,13 +57,21 @@ module.exports = {
 
                 const denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
 
-                // Lines are parallel
-                if (denominator === 0) {
+                const slopeA = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3));
+                const slopeB = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3));
+
+                // Sections overlapping
+                if (slopeA === slopeB) {
+                    return ((x1 - x3) * (y1 - y4) - (x1 - x4) * (y1 - y3) === 0 || (x2 - x3) * (y2 - y4) - (x2 - x4) * (y2 - y3) === 0);
+                }
+
+                // Sections are parallel
+                if (denominator === 0 && slopeA !== slopeB) {
                     return false;
                 }
 
-                const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-                const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
+                const ua = slopeA / denominator;
+                const ub = slopeB / denominator;
 
                 // is the intersection along the segments
                 if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
@@ -120,7 +128,7 @@ module.exports = {
             }
         } else { // second click case since only two clocks are possible
             // VALID_END_NODE , INVALID_END_NODE
-            const intersection = lineWillIntersect(state.lines, state.thisMoveStartDot, dotFromUi);
+            const intersection = lineWillIntersect(state.sections, state.thisMoveStartDot, dotFromUi);
             const doubleDots = intersection.map(dot => isSameDot(dot, state.thisMoveStartDot));
             doubleDots.pop(); // remove first/last line & thisMoveStartDot intersection
 
@@ -135,7 +143,7 @@ module.exports = {
                 state.line.end = dotFromUi;
                 state.click = 1;
                 state.player = state.player === 1 ? 2 : 1;
-                state.lines.push({start: state.thisMoveStartDot, end: state.thisMoveEndDot});
+                state.sections.push({start: state.thisMoveStartDot, end: state.thisMoveEndDot});
                 payload = {
                     msg: 'VALID_END_NODE', body: {
                         newLine: {
