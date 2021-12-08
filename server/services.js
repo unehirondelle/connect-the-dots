@@ -91,6 +91,52 @@ module.exports = {
             });
         };
 
+        const checkGameOver = (sections, lineStart, lineEnd) => {
+            let sectionsToCheck = [];
+            let intersections = [];
+            const givenPoints = [lineStart, lineEnd];
+
+            givenPoints.forEach(data => {
+                const increasedX = data.x + 1;
+                const decreasedX = data.x - 1;
+                const increasedY = data.y + 1;
+                const decreasedY = data.y - 1;
+
+                if ((increasedX >= 0 && increasedX <= 3) && (increasedY >= 0 && increasedY <= 3)) {
+                    sectionsToCheck.push({x: increasedX, y: increasedY});
+                }
+                if ((increasedX >= 0 && increasedX <= 3) && (decreasedY >= 0 && decreasedY <= 3)) {
+                    sectionsToCheck.push({x: increasedX, y: decreasedY});
+                }
+                if (increasedX >= 0 && increasedX <= 3) {
+                    sectionsToCheck.push({x: increasedX, y: data.y});
+                }
+                if ((decreasedX >= 0 && decreasedX <= 3) && (increasedY >= 0 && increasedY <= 3)) {
+                    sectionsToCheck.push({x: decreasedX, y: increasedY});
+                }
+                if ((decreasedX >= 0 && decreasedX <= 3) && (decreasedY >= 0 && decreasedY <= 3)) {
+                    sectionsToCheck.push({x: decreasedX, y: decreasedY});
+                }
+                if (decreasedX >= 0 && decreasedX <= 3) {
+                    sectionsToCheck.push({x: decreasedX, y: data.y});
+                }
+                if (increasedY >= 0 && increasedY <= 3) {
+                    sectionsToCheck.push({x: data.x, y: increasedY});
+                }
+                if (decreasedY >= 0 && decreasedY <= 3) {
+                    sectionsToCheck.push({x: data.x, y: decreasedY});
+                }
+
+                sectionsToCheck.forEach(point => {
+                    intersections.push(lineWillIntersect(sections, data, point).find(r => r === false));
+                });
+
+                sectionsToCheck = [];
+            });
+
+            return !!intersections.find(r => r === false);
+        };
+
         if (state.click === 1) {
             //VALID_START_NODE or IN-VALID_START_NODE
             payload = {
@@ -144,17 +190,33 @@ module.exports = {
                 state.click = 1;
                 state.player = state.player === 1 ? 2 : 1;
                 state.sections.push({start: state.thisMoveStartDot, end: state.thisMoveEndDot});
-                payload = {
-                    msg: 'VALID_END_NODE', body: {
-                        newLine: {
-                            start: state.thisMoveStartDot, end: state.thisMoveEndDot
-                        }, heading: `Player ${state.player}`, message: `Player ${state.player}, make your choice`
-                    }
-                };
-                state.thisMoveStartDot = {x: null, y: null};
-                state.thisMoveEndDot = {x: null, y: null};
+                if (checkGameOver(state.sections, state.line.start, state.line.end)) {
+                    payload = {
+                        msg: 'GAME_OVER',
+                        body: {
+                            newLine: {
+                                start: {x: 0, y: 0},
+                                end: {x: 0, y: 2}
+                            },
+                            heading: 'Game Over',
+                            message: `Player ${state.player} Wins!`
+                        }
+                    };
+                } else {
+                    payload = {
+                        msg: 'VALID_END_NODE',
+                        body: {
+                            newLine: {
+                                start: state.thisMoveStartDot, end: state.thisMoveEndDot
+                            }, heading: `Player ${state.player}`, message: `Player ${state.player}, make your choice`
+                        }
+                    };
+                }
             }
+            state.thisMoveStartDot = {x: null, y: null};
+            state.thisMoveEndDot = {x: null, y: null};
         }
+
         payload['id'] = id;
         return payload;
     }
