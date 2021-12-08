@@ -42,38 +42,45 @@ module.exports = {
         };
 
         const lineWillIntersect = (lines, startNode, endNode) => {
-            for (let i = 0; i < lines.length; i++) {
-                const x1 = lines[i].start.x;
-                const y1 = lines[i].start.y;
-                const x2 = lines[i].end.x;
-                const y2 = lines[i].end.y;
+            // Run through all the sections to determine if there is any intersection with line-to-be
+            // line intercept math by Paul Bourke is used
+            return lines.map(line => {
+                const x1 = line.start.x;
+                const y1 = line.start.y;
+                const x2 = line.end.x;
+                const y2 = line.end.y;
 
                 const x3 = startNode.x;
                 const y3 = startNode.y;
                 const x4 = endNode.x;
                 const y4 = endNode.y;
 
-                // Check if none of the lines are of length 0
-                if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
-                    return false;
-                }
-
                 const denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
 
                 // Lines are parallel
                 if (denominator === 0) {
-                    return false
+                    return false;
                 }
 
-                let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
-                let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
+                const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+                const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator;
 
-                // Return a object with the x and y coordinates of the intersection
-                let x = x1 + ua * (x2 - x1);
-                let y = y1 + ua * (y2 - y1);
+                // is the intersection along the segments
+                if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
+                    return false;
+                }
 
-                return {x, y};
-            }
+                // Return an object with the x and y coordinates of the intersection
+                const x = x1 + ua * (x2 - x1);
+                const y = y1 + ua * (y2 - y1);
+
+                // Check if intersection coordinates match with thisMoveStartDot
+                if (!isSameDot({x, y}, state.thisMoveStartDot)) {
+                    return {x, y};
+                } else {
+                    return false;
+                }
+            });
         };
 
         console.log(`state: ${JSON.stringify(state)}`);
@@ -109,16 +116,18 @@ module.exports = {
         } else { // second click case since only two clocks are possible
             // VALID_END_NODE , INVALID_END_NODE
             const intersection = lineWillIntersect(state.lines, state.thisMoveStartDot, dotFromUi);
+            const doubleDots = intersection.map(dot => isSameDot(dot, state.thisMoveStartDot));
+            doubleDots.pop(); // remove first/last line & thisMoveStartDot intersection
 
             if (!lineGoesThroughDots(state.thisMoveStartDot, dotFromUi)) {
                 payload = error('Line should go through the dots.');
             } else if (isSameDot(dotFromUi, state.line.start) || isSameDot(dotFromUi, state.line.end)) {
                 payload = error('Line should not close');
-            } else if (!!intersection && !isSameDot(intersection, state.thisMoveStartDot)) {
+            } else if (intersection.length && !!intersection.find(el => !!el)) {
                 payload = error('Line should not intersect.');
             } else {
                 state.thisMoveEndDot = dotFromUi;
-                state.line.end = dotFromUi; //{"x": 2,"y": 2}
+                state.line.end = dotFromUi;
                 state.click = 1;
                 state.player = state.player === 1 ? 2 : 1;
                 state.lines.push({start: state.thisMoveStartDot, end: state.thisMoveEndDot});
