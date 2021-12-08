@@ -83,9 +83,6 @@ module.exports = {
             });
         };
 
-        console.log(`state: ${JSON.stringify(state)}`);
-        console.log(`body: ${JSON.stringify(dotFromUi)}`);
-
         if (state.click === 1) {
             //VALID_START_NODE or IN-VALID_START_NODE
             payload = {
@@ -98,12 +95,20 @@ module.exports = {
             };
 
             if (state.line.start.x === null) {
-                console.log('very first dot on the field')
+                console.log('very first dot on the field');
                 state.thisMoveStartDot = dotFromUi;
                 state.line.start = dotFromUi;
                 state.click = 2;
-            } else if (isSameDot(state.line.start, dotFromUi) || isSameDot(state.line.end, dotFromUi)) {
-                console.log('either end of line')
+            } else if (isSameDot(state.line.start, dotFromUi)) {
+                console.log('start of line');
+                const oldStart = state.line.start;
+                const oldEnd = state.line.end;
+                state.line.end = oldStart;
+                state.line.start = oldEnd;
+                state.thisMoveStartDot = dotFromUi;
+                state.click = 2;
+            } else if (isSameDot(state.line.end, dotFromUi)) {
+                console.log('end of line');
                 state.thisMoveStartDot = dotFromUi;
                 state.click = 2;
             } else {
