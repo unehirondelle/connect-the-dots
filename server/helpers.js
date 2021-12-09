@@ -7,7 +7,7 @@ module.exports = {
     isSameDot: (a, b) => {
         return a.x === b.x && a.y === b.y;
     },
-    lineWillIntersect: (sections, startNode, endNode, state) => {
+    lineWillIntersect: (sections, startNode, endNode, state, isGameOverCheck) => {
         // Run through all the sections to determine if there is any intersection with line-to-be
         // line intercept math by Paul Bourke is used (http://paulbourke.net/geometry/pointlineplane/)
         return sections.map(line => {
@@ -27,14 +27,18 @@ module.exports = {
             const slopeB = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3));
 
             // Sections overlapping
-            if (slopeA === slopeB) {
+            /*if (slopeA === slopeB) {
                 return ((x1 - x3) * (y1 - y4) - (x1 - x4) * (y1 - y3) === 0 || (x2 - x3) * (y2 - y4) - (x2 - x4) * (y2 - y3) === 0);
-            }
+            }*/
 
             // Sections are parallel
-            if (denominator === 0 && slopeA !== slopeB) {
+            if (denominator === 0) {
                 return false;
             }
+
+            // if (denominator === 0 && slopeA !== slopeB) {
+            //     return false;
+            // }
 
             const ua = slopeA / denominator;
             const ub = slopeB / denominator;
@@ -48,16 +52,20 @@ module.exports = {
             const x = x1 + ua * (x2 - x1);
             const y = y1 + ua * (y2 - y1);
 
-            // Check if intersection coordinates match with thisMoveStartDot
-            if (!module.exports.isSameDot({x, y}, state.thisMoveStartDot)) {
+            if (isGameOverCheck) {
                 return {x, y};
             } else {
-                return false;
+                // Check if intersection coordinates match with thisMoveStartDot
+                if (!module.exports.isSameDot({x, y}, state.thisMoveStartDot)) {
+                    return {x, y};
+                } else {
+                    return false;
+                }
             }
         });
     },
     checkGameOver: (sections, lineStart, lineEnd, state) => {
-        let sectionsToCheck = [];
+        let possibleConnections = [];
         let intersections = [];
         const givenPoints = [lineStart, lineEnd];
 
@@ -68,37 +76,46 @@ module.exports = {
             const decreasedY = data.y - 1;
 
             if ((increasedX >= 0 && increasedX <= 3) && (increasedY >= 0 && increasedY <= 3)) {
-                sectionsToCheck.push({x: increasedX, y: increasedY});
+                possibleConnections.push({x: increasedX, y: increasedY});
             }
             if ((increasedX >= 0 && increasedX <= 3) && (decreasedY >= 0 && decreasedY <= 3)) {
-                sectionsToCheck.push({x: increasedX, y: decreasedY});
+                possibleConnections.push({x: increasedX, y: decreasedY});
             }
             if (increasedX >= 0 && increasedX <= 3) {
-                sectionsToCheck.push({x: increasedX, y: data.y});
+                possibleConnections.push({x: increasedX, y: data.y});
             }
             if ((decreasedX >= 0 && decreasedX <= 3) && (increasedY >= 0 && increasedY <= 3)) {
-                sectionsToCheck.push({x: decreasedX, y: increasedY});
+                possibleConnections.push({x: decreasedX, y: increasedY});
             }
             if ((decreasedX >= 0 && decreasedX <= 3) && (decreasedY >= 0 && decreasedY <= 3)) {
-                sectionsToCheck.push({x: decreasedX, y: decreasedY});
+                possibleConnections.push({x: decreasedX, y: decreasedY});
             }
             if (decreasedX >= 0 && decreasedX <= 3) {
-                sectionsToCheck.push({x: decreasedX, y: data.y});
+                possibleConnections.push({x: decreasedX, y: data.y});
             }
             if (increasedY >= 0 && increasedY <= 3) {
-                sectionsToCheck.push({x: data.x, y: increasedY});
+                possibleConnections.push({x: data.x, y: increasedY});
             }
             if (decreasedY >= 0 && decreasedY <= 3) {
-                sectionsToCheck.push({x: data.x, y: decreasedY});
+                possibleConnections.push({x: data.x, y: decreasedY});
             }
 
-            sectionsToCheck.forEach(point => {
-                intersections.push(module.exports.lineWillIntersect(sections, data, point, state).find(r => r === false));
+            const checkResult = possibleConnections.map((point, i) => ({[i]: []}));
+
+            possibleConnections.forEach((point, i) => {
+                module.exports.lineWillIntersect(sections, data, point, state, true)
+                    .forEach((el) => {
+                        checkResult[i][i].push(el);
+                    });
             });
 
-            sectionsToCheck = [];
+            checkResult.forEach((el, i) => {
+                intersections.push(el[i].find(v => typeof v === 'object'));
+            });
+
+            possibleConnections = [];
         });
 
-        return !!intersections.find(r => r === false);
+        return !intersections.filter(v => typeof v === 'undefined').length;
     }
 };

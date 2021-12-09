@@ -83,7 +83,6 @@ module.exports = {
             } else {
                 state.thisMoveEndDot = dotFromUi;
                 state.line.end = dotFromUi;
-                state.click = 1;
                 state.player = state.player === 1 ? 2 : 1;
                 state.sections.push({start: state.thisMoveStartDot, end: state.thisMoveEndDot});
                 if (checkGameOver(state.sections, state.line.start, state.line.end, state)) {
@@ -109,8 +108,11 @@ module.exports = {
                     };
                 }
             }
+            // No matter if a user picker eligible second dot -0 they need to start from the first dot
+            state.click = 1;
             state.thisMoveStartDot = {x: null, y: null};
             state.thisMoveEndDot = {x: null, y: null};
+            console.log('LINE START', state.line.start, 'LINE END', state.line.end);
         }
 
         payload['id'] = id;
