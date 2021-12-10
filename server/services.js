@@ -71,13 +71,13 @@ module.exports = {
         } else { // second click case since only two clocks are possible
             // VALID_END_NODE , INVALID_END_NODE
             const intersection = lineWillIntersect(state.sections, state.thisMoveStartDot, dotFromUi, state);
-            const doubleDots = intersection.map(dot => isSameDot(dot, state.thisMoveStartDot));
-            doubleDots.pop(); // remove first/last line & thisMoveStartDot intersection
 
             if (!lineGoesThroughDots(state.thisMoveStartDot, dotFromUi)) {
                 payload = error('Line should go through the dots.');
             } else if (isSameDot(dotFromUi, state.line.start) || isSameDot(dotFromUi, state.line.end)) {
                 payload = error('Line should not close');
+            } else if (intersection.length && !!intersection.find(el => el === true)) {
+                payload = error('Line should not overlap.');
             } else if (intersection.length && !!intersection.find(el => !!el)) {
                 payload = error('Line should not intersect.');
             } else {
@@ -85,33 +85,32 @@ module.exports = {
                 state.line.end = dotFromUi;
                 state.player = state.player === 1 ? 2 : 1;
                 state.sections.push({start: state.thisMoveStartDot, end: state.thisMoveEndDot});
-                if (checkGameOver(state.sections, state.line.start, state.line.end, state)) {
-                    payload = {
-                        msg: 'GAME_OVER',
-                        body: {
-                            newLine: {
-                                start: {x: 0, y: 0},
-                                end: {x: 0, y: 2}
-                            },
-                            heading: 'Game Over',
-                            message: `Player ${state.player} Wins!`
-                        }
-                    };
-                } else {
+                // if (checkGameOver(state.sections, state.line.start, state.line.end, state)) {
+                //     payload = {
+                //         msg: 'GAME_OVER',
+                //         body: {
+                //             newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
+                //             heading: 'Game Over',
+                //             message: `Player ${state.player} Wins!`
+                //         }
+                //     };
+                // } else {
                     payload = {
                         msg: 'VALID_END_NODE',
                         body: {
-                            newLine: {
-                                start: state.thisMoveStartDot, end: state.thisMoveEndDot
-                            }, heading: `Player ${state.player}`, message: `Player ${state.player}, make your choice`
+                            newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
+                            heading: `Player ${state.player}`,
+                            message: `Player ${state.player}, make your choice`
                         }
                     };
-                }
+                // }
             }
             // No matter if a user picker eligible second dot -0 they need to start from the first dot
-            state.click = 1;
-            state.thisMoveStartDot = {x: null, y: null};
-            state.thisMoveEndDot = {x: null, y: null};
+            if (payload.msg !== 'GAME_OVER') {
+                state.click = 1;
+                state.thisMoveStartDot = {x: null, y: null};
+                state.thisMoveEndDot = {x: null, y: null};
+            }
             console.log('LINE START', state.line.start, 'LINE END', state.line.end);
         }
 
