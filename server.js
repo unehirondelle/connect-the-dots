@@ -7,6 +7,8 @@ const app = express();
 const server = createServer(app);
 const wsServer = new WebsocketServer({server});
 
+app.use(express.static(__dirname + '/client/'));
+
 wsServer.on('connection', (ws) => {
     ws.on('message', (data) => {
         console.log(`request: ${data}`);
