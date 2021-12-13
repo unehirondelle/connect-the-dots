@@ -88,7 +88,7 @@ const nodeClick = ({id, body: dotFromUi}) => {
                     body: {
                         newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
                         heading: 'Game Over',
-                        message: `Player ${state.player} Wins!`
+                        message: `Player ${state.player} Wins! Refresh the page to play again`
                     }
                 };
             } else {
