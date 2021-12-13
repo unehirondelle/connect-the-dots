@@ -7,69 +7,58 @@ module.exports = {
     isSameDot: (a, b) => {
         return a.x === b.x && a.y === b.y;
     },
-    collinearLines: (a, b, c) => {
-        const slope = (point1, point2) => {
-            return (point2.y - point1.y) / (point2.x - point1.x);
-        };
-        return slope(a, b) === slope(b, c) && slope(b, c) === slope(c, a);
+    pointIsOnSection: (existingSections, candidate) => {
+        for (let k in existingSections) {
+            const section = existingSections[k];
+            const a = section.start;
+            const b = section.end;
+            const c = candidate;
+            if (Math.abs(Math.sqrt(Math.pow(a.x - c.x, 2) + Math.pow(a.y - c.y, 2)) +
+                Math.sqrt(Math.pow(b.x - c.x, 2) + Math.pow(b.y - c.y, 2)) - Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2))) === 0) {
+                return true;
+            }
+        }
+        return false;
     },
-    pointBelongsToSection: (a, b, c) => {
-        // return !!(c.y - a.y) * (b.x - a.x) === (b.y - a.y) * (c.x - a.x);
-        return Math.abs(Math.sqrt(Math.pow(a.x - c.x, 2) + Math.pow(a.y - c.y, 2)) +
-            Math.sqrt(Math.pow(b.x - c.x, 2) + Math.pow(b.y - c.y, 2)) - Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2))) === 0;
-    },
-    lineWillIntersect: (sections, startNode, endNode, state) => {
+    lineWillIntersect: (existingSections, candidate) => {
         // Run through all the sections to determine if there is any intersection with line-to-be
         // line intersect math by Paul Bourke is used (http://paulbourke.net/geometry/pointlineplane/)
-        return sections.map(section => {
-            const x1 = section.start.x;
-            const y1 = section.start.y;
-            const x2 = section.end.x;
-            const y2 = section.end.y;
+        for (let k in existingSections) {
+            const section = existingSections[k];
+            const a = section.start;
+            const b = section.end;
+            const c = candidate.start;
+            const d = candidate.end;
 
-            const x3 = startNode.x;
-            const y3 = startNode.y;
-            const x4 = endNode.x;
-            const y4 = endNode.y;
+            const denominator = ((d.y - c.y) * (b.x - a.x) - (d.x - c.x) * (b.y - a.y));
 
-            const denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
+            const slopeA = ((d.x - c.x) * (a.y - c.y) - (d.y - c.y) * (a.x - c.x));
+            const slopeB = ((b.x - a.x) * (a.y - c.y) - (b.y - a.y) * (a.x - c.x));
 
-            const slopeA = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3));
-            const slopeB = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3));
+            // if denominator === 0 - sections are parallel
+            if (denominator !== 0) {
+                const ua = slopeA / denominator;
+                const ub = slopeB / denominator;
+                // is the intersection along the segments
+                const res = ua < 0 || ua > 1 || ub < 0 || ub > 1;
+                console.log(`no intersection? ${JSON.stringify(section)} - ${JSON.stringify(candidate)}`, res);
 
-            // Sections are parallel
-            if (denominator === 0) {
-                // Sections overlapping
-                // line duplicate
-                if ((module.exports.isSameDot(section.end, startNode) && module.exports.isSameDot(section.start, endNode)) ||
-                    // same length line in other direction
-                    (/*!!module.exports.collinearLines(section.start, startNode, endNode) && */!module.exports.pointBelongsToSection(endNode, section.start, section.end))
-                ) {
+                if (res) {
+                    console.log('A - no intersection');
+                    continue;
+                }
+                // calculate coordinates of intersection
+                const x = a.x + ua * (b.x - a.x);
+                const y = a.y + ua * (b.y - a.y);
+                console.log(`maybe intersection: ${x},${y}`);
+                // check if the intersection equals candidate.start
+                if (!module.exports.isSameDot({x, y}, c)) {
+                    console.log('B - true intersection');
                     return true;
-                } else {
-                    return false;
                 }
             }
-
-            const ua = slopeA / denominator;
-            const ub = slopeB / denominator;
-
-            // is the intersection along the segments
-            if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
-                return false;
-            }
-
-            // Return an object with the x and y coordinates of the intersection
-            const x = x1 + ua * (x2 - x1);
-            const y = y1 + ua * (y2 - y1);
-
-            // Check if intersection coordinates match with thisMoveStartDot
-            if (!module.exports.isSameDot({x, y}, state.thisMoveStartDot)) {
-                return {x, y};
-            } else {
-                return false;
-            }
-        });
+        }
+        return false;
     },
     checkGameOver: (sections, lineStart, lineEnd, state) => {
         let candidates = [];
@@ -126,8 +115,5 @@ module.exports = {
         // return !!(intersections.filter(v => typeof v === 'undefined').length === 1 && okPoints.find(o => module.exports.isSameDot(o, state.thisMoveStartDot)));
         console.log(`INTERSECTIONS ${JSON.stringify(intersections)}`);
         return !intersections.filter(v => typeof v === 'undefined').length/* && okPoints[1].length === 1*/;
-    },
-    isValidMove: () => {
-
     }
 };

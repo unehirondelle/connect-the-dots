@@ -1,4 +1,4 @@
-const {lineGoesThroughDots, isSameDot, lineWillIntersect, checkGameOver} = require('./helpers');
+const {lineGoesThroughDots, isSameDot, lineWillIntersect, checkGameOver, pointIsOnSection} = require('./helpers');
 
 let state = {
     player: 1,
@@ -70,16 +70,17 @@ module.exports = {
             }
         } else { // second click case since only two clocks are possible
             // VALID_END_NODE , INVALID_END_NODE
-            const intersection = lineWillIntersect(state.sections, state.thisMoveStartDot, dotFromUi, state);
+            const isIntersection = lineWillIntersect(state.sections, {start: state.thisMoveStartDot, end: dotFromUi});
+            const isOnSection = pointIsOnSection(state.sections, dotFromUi);
 
             if (!lineGoesThroughDots(state.thisMoveStartDot, dotFromUi)) {
                 payload = error('Line should go through the dots.');
             } else if (isSameDot(dotFromUi, state.line.start) || isSameDot(dotFromUi, state.line.end)) {
                 payload = error('Line should not close');
-            } else if (intersection.length && !!intersection.find(el => el === true)) {
-                payload = error('Line should not overlap.');
-            } else if (intersection.length && !!intersection.find(el => !!el)) {
+            } else if (isIntersection) {
                 payload = error('Line should not intersect.');
+            } else if (isOnSection) {
+                payload = error('New should not belong to existing sections.');
             } else {
                 state.thisMoveEndDot = dotFromUi;
                 state.line.end = dotFromUi;
@@ -95,14 +96,14 @@ module.exports = {
                 //         }
                 //     };
                 // } else {
-                    payload = {
-                        msg: 'VALID_END_NODE',
-                        body: {
-                            newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
-                            heading: `Player ${state.player}`,
-                            message: `Player ${state.player}, make your choice`
-                        }
-                    };
+                payload = {
+                    msg: 'VALID_END_NODE',
+                    body: {
+                        newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
+                        heading: `Player ${state.player}`,
+                        message: `Player ${state.player}, make your choice`
+                    }
+                };
                 // }
             }
             // No matter if a user picker eligible second dot -0 they need to start from the first dot
