@@ -83,25 +83,25 @@ module.exports = {
                 state.line.end = dotFromUi;
                 state.player = state.player === 1 ? 2 : 1;
                 state.sections.push({start: state.thisMoveStartDot, end: state.thisMoveEndDot});
-                // if (checkGameOver(state.sections, state.line.start, state.line.end, state)) {
-                //     payload = {
-                //         msg: 'GAME_OVER',
-                //         body: {
-                //             newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
-                //             heading: 'Game Over',
-                //             message: `Player ${state.player} Wins!`
-                //         }
-                //     };
-                // } else {
-                payload = {
-                    msg: 'VALID_END_NODE',
-                    body: {
-                        newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
-                        heading: `Player ${state.player}`,
-                        message: `Player ${state.player}, make your choice`
-                    }
-                };
-                // }
+                if (checkGameOver(state.sections, state.line.start, state.line.end)) {
+                    payload = {
+                        msg: 'GAME_OVER',
+                        body: {
+                            newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
+                            heading: 'Game Over',
+                            message: `Player ${state.player} Wins!`
+                        }
+                    };
+                } else {
+                    payload = {
+                        msg: 'VALID_END_NODE',
+                        body: {
+                            newLine: {start: state.thisMoveStartDot, end: state.thisMoveEndDot},
+                            heading: `Player ${state.player}`,
+                            message: `Player ${state.player}, make your choice`
+                        }
+                    };
+                }
             }
             // No matter if a user picker eligible second dot -0 they need to start from the first dot
             if (payload.msg !== 'GAME_OVER') {

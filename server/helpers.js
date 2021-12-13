@@ -60,10 +60,10 @@ module.exports = {
         }
         return false;
     },
-    checkGameOver: (sections, lineStart, lineEnd, state) => {
+    checkGameOver: (existingSections, lineStart, lineEnd) => {
         let candidates = [];
-        let intersections = [];
         const givenPoints = [lineStart, lineEnd];
+        const result = [];
 
         givenPoints.forEach((data, index) => {
             const increasedX = data.x + 1;
@@ -96,24 +96,18 @@ module.exports = {
                 candidates.push({x: data.x, y: decreasedY});
             }
 
-            const checkResult = candidates.map((point, i) => ({[i]: []}));
-
-            candidates.forEach((point, i) => {
-                module.exports.lineWillIntersect(sections, data, point, state)
-                    .forEach((el) => {
-                        checkResult[i][i].push(el);
-                    });
-            });
-
-            checkResult.forEach((el, i) => {
-                intersections.push(el[i].find(v => typeof v === 'object' || v === true));
-            });
-
+            for (let k in candidates) {
+                const candidate = candidates[k];
+                if (module.exports.lineWillIntersect(existingSections, {start: data, end: candidate}) ||
+                    module.exports.pointIsOnSection(existingSections, candidate)) {
+                    result.push(true);
+                } else {
+                    result.push(false);
+                }
+            }
             candidates = [];
         });
-        // only one intersection found and it's the start Dot of the last move
-        // return !!(intersections.filter(v => typeof v === 'undefined').length === 1 && okPoints.find(o => module.exports.isSameDot(o, state.thisMoveStartDot)));
-        console.log(`INTERSECTIONS ${JSON.stringify(intersections)}`);
-        return !intersections.filter(v => typeof v === 'undefined').length/* && okPoints[1].length === 1*/;
+
+        return !result.filter(r => r === false).length;
     }
 };
