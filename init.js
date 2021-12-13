@@ -8,7 +8,7 @@ const node = document.getElementById('app');
 // https://technical-assessment.konicaminoltamarketplace.com
 const app = Elm.Main.embed(node, {
     api: 'WebSocket',
-    hostname: 'ws://localhost:8081',
+    hostname: `ws://localhost:${process.env.PORT || 8081}`
 });
 
 app.ports.startTimer.subscribe((int) => {

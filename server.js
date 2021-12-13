@@ -25,17 +25,6 @@ wsServer.on('connection', (ws) => {
             case 'NODE_CLICKED':
                 payload = nodeClick({...message});
                 break;
-            case 'UPDATE_TEXT' :
-                payload = {
-                    id: 0,
-                    msg: 'UPDATE_TEXT',
-                    body: {
-                        newLine: null,
-                        heading: 'Player 2',
-                        message: 'Are you asleep?'
-                    }
-                };
-                break;
             case 'ERROR':
                 console.error(`ERROR: ${message.body}`);
                 break;
@@ -49,4 +38,5 @@ wsServer.on('connection', (ws) => {
 
 });
 
-server.listen(8081);
+const PORT = process.env.PORT || 8081;
+server.listen(PORT);
