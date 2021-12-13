@@ -9,6 +9,9 @@ Game rules:
 4. The player who sets the last line looses
 5. Refresh the browser page to re-start the game
 
+## Deployed version of the app
+
+https://connect-the-dots-game.herokuapp.com/
 
 ## Run the application locally
 
