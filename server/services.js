@@ -70,16 +70,13 @@ module.exports = {
             }
         } else { // second click case since only two clocks are possible
             // VALID_END_NODE , INVALID_END_NODE
-            const isIntersection = lineWillIntersect(state.sections, {start: state.thisMoveStartDot, end: dotFromUi});
-            const isOnSection = pointIsOnSection(state.sections, dotFromUi);
-
             if (!lineGoesThroughDots(state.thisMoveStartDot, dotFromUi)) {
                 payload = error('Line should go through the dots.');
             } else if (isSameDot(dotFromUi, state.line.start) || isSameDot(dotFromUi, state.line.end)) {
                 payload = error('Line should not close');
-            } else if (isIntersection) {
+            } else if (lineWillIntersect(state.sections, {start: state.thisMoveStartDot, end: dotFromUi})) {
                 payload = error('Line should not intersect.');
-            } else if (isOnSection) {
+            } else if (pointIsOnSection(state.sections, dotFromUi)) {
                 payload = error('New should not belong to existing sections.');
             } else {
                 state.thisMoveEndDot = dotFromUi;
